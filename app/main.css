@@ -1,0 +1,25 @@
+html,
+body,
+#viewDiv {
+  padding: 0;
+  margin: 0;
+  height: 100%;
+  width: 100%;
+}
+select {
+  width: 100%;
+  margin-bottom: 2em;
+}
+#titleDiv {
+  padding: 10px;
+  max-width: 500px;
+}
+#titleText {
+  font-size: 32pt;
+  font-weight: 600;
+  padding: 10px 5px 10px 5px;
+}
+#dataDescription {
+  font-size: 12pt;
+  padding: 10px 5px 0px 5px;
+}

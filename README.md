@@ -1,1 +1,1 @@
-# effects-auto-scale
+# effects-global-defaults

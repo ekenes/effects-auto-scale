@@ -1,0 +1,23 @@
+{
+  "name": "effects-global-defaults",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/ekenes/effects-global-defaults.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/ekenes/effects-global-defaults/issues"
+  },
+  "homepage": "https://github.com/ekenes/effects-global-defaults#readme",
+  "dependencies": {
+    "@types/arcgis-js-api": "^4.19.0"
+  }
+}
