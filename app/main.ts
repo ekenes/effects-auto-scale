@@ -8,6 +8,7 @@ import LayerList = require("esri/widgets/LayerList");
 import BasemapLayerList = require("esri/widgets/BasemapLayerList");
 import ActionToggle = require("esri/support/actions/ActionToggle");
 import BasemapGallery = require("esri/widgets/BasemapGallery");
+import Color = require("esri/Color");
 
 import { getUrlParams } from "./urlParams";
 
@@ -29,6 +30,8 @@ import { getUrlParams } from "./urlParams";
     container: "viewDiv"
   });
   view.ui.add("titleDiv", "top-right");
+
+  await view.when();
 
   view.ui.add(new Expand({
     content: new Legend({ view }),
@@ -114,5 +117,62 @@ import { getUrlParams } from "./urlParams";
     group: "top-right"
   }), "top-right");
   basemapLayerList.on("trigger-action", triggerAction);
+
+  interface BloomParams {
+    strength: number;
+    radius: number;
+    threshold: number;
+  }
+
+  function setBloom(scale: number, params: BloomParams): esri.Effect {
+    const { strength, radius, threshold } = params;
+    const factor = 2;
+    const invFactor = 1 / factor;
+    return [
+      {
+        // the original values have been doubled after two zoom level in
+        scale: scale * 0.25,
+        value: `bloom(${strength * factor}, ${radius * factor}, ${threshold})`,
+      },
+      {
+        scale,
+        value: `bloom(${strength}, ${radius}, ${threshold})`,
+      },
+      {
+        // the original values have been halved after two zooms level out
+        scale: scale * 2,
+        value: `bloom(${strength * invFactor}, ${radius * invFactor}, ${threshold})`,
+      }
+    ];
+  }
+
+  interface DropshadowParams {
+    offsetX: number;
+    offsetY: number;
+    blurRadius: number;
+    color: Color;
+  }
+
+  function setDropshadow(scale: number, params: DropshadowParams): esri.Effect {
+    const { offsetX, offsetY, blurRadius, color } = params;
+    const factor = 2;
+    const invFactor = 1 / factor;
+    return [
+      {
+        // the original values have been doubled after two zoom level in
+        scale: scale * 0.25,
+        value: `drop-shadow(${offsetX * factor}px, ${offsetY * factor}px, ${blurRadius * factor}px, ${color})`,
+      },
+      {
+        scale,
+        value: `drop-shadow(${offsetX}px, ${offsetY}px, ${blurRadius}px, ${color})`,
+      },
+      {
+        // the original values have been halved after two zooms level out
+        scale: scale * 2,
+        value: `drop-shadow(${offsetX * invFactor}px, ${offsetY * invFactor}px, ${blurRadius * invFactor}px, ${color})`,
+      }
+    ];
+  }
 
 })();

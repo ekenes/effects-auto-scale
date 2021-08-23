@@ -54,6 +54,48 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                 createActions(effects)
             ];
         }
+        function setBloom(scale, params) {
+            var strength = params.strength, radius = params.radius, threshold = params.threshold;
+            var factor = 2;
+            var invFactor = 1 / factor;
+            return [
+                {
+                    // the original values have been doubled after two zoom level in
+                    scale: scale * 0.25,
+                    value: "bloom(" + strength * factor + ", " + radius * factor + ", " + threshold + ")",
+                },
+                {
+                    scale: scale,
+                    value: "bloom(" + strength + ", " + radius + ", " + threshold + ")",
+                },
+                {
+                    // the original values have been halved after two zooms level out
+                    scale: scale * 2,
+                    value: "bloom(" + strength * invFactor + ", " + radius * invFactor + ", " + threshold + ")",
+                }
+            ];
+        }
+        function setDropshadow(scale, params) {
+            var offsetX = params.offsetX, offsetY = params.offsetY, blurRadius = params.blurRadius, color = params.color;
+            var factor = 2;
+            var invFactor = 1 / factor;
+            return [
+                {
+                    // the original values have been doubled after two zoom level in
+                    scale: scale * 0.25,
+                    value: "drop-shadow(" + offsetX * factor + "px, " + offsetY * factor + "px, " + blurRadius * factor + "px, " + color + ")",
+                },
+                {
+                    scale: scale,
+                    value: "drop-shadow(" + offsetX + "px, " + offsetY + "px, " + blurRadius + "px, " + color + ")",
+                },
+                {
+                    // the original values have been halved after two zooms level out
+                    scale: scale * 2,
+                    value: "drop-shadow(" + offsetX * invFactor + "px, " + offsetY * invFactor + "px, " + blurRadius * invFactor + "px, " + color + ")",
+                }
+            ];
+        }
         var webmap, map, view, effects, createActions, layerList, basemapLayerList;
         return __generator(this, function (_a) {
             switch (_a.label) {
@@ -75,6 +117,9 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                         container: "viewDiv"
                     });
                     view.ui.add("titleDiv", "top-right");
+                    return [4 /*yield*/, view.when()];
+                case 3:
+                    _a.sent();
                     view.ui.add(new Expand({
                         content: new Legend({ view: view }),
                         view: view,
