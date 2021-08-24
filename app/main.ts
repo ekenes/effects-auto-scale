@@ -61,6 +61,9 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
     color: new Color("#000000")
   };
 
+  const bloomCurrent = bloomDefault;
+  const dropShadowCurrent = dropShadowDefault;
+
   let selectedLayer: FeatureLayer;
 
   const effects = {
@@ -93,7 +96,14 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
     group: "top-right"
   }), "top-right");
 
+  let scaleWatcher:esri.WatchHandle = null;
+
   function triggerAction (event: esri.LayerListTriggerActionEvent) {
+    if(scaleWatcher){
+      scaleWatcher.remove();
+      scaleWatcher = null;
+    }
+
     const { action, item } = event;
     const { id } = action;
     const layer = item.layer as esri.FeatureLayer;
@@ -129,6 +139,31 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
             updateBloomEffect(view.scale, layer)
           });
         });
+
+        scaleWatcher = view.watch("scale", (viewScale) => {
+          console.log("scale", view.scale);
+          console.log("effects", layer.effect);
+
+          if(viewScale > effects[2].scale){
+            return;
+          }
+
+          if(viewScale > effects[1].scale){
+            const referenceScale = effects[1].scale;
+            viewScale
+          }
+
+          if(viewScale > effects[0].scale){
+
+          }
+
+          if(viewScale < effects[0].scale){
+            return;
+          }
+
+
+
+        })
       }
       if(id === "Drop shadow"){
         item.panel = {
@@ -162,6 +197,10 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
       const radius = parseFloat(bloomRadiusControl.value);
       const threshold = parseFloat(bloomThresholdControl.value);
 
+      bloomCurrent.strength = strength;
+      bloomCurrent.radius = radius;
+      bloomCurrent.threshold = threshold;
+
       const bloomParams = { strength, radius, threshold };
 
       const effects = setBloom(scale, bloomParams);
@@ -176,6 +215,10 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
       const offsetY = parseFloat(dropshadowOffsetYControl.value);
       const blurRadius = parseFloat(dropshadowBlurRadiusControl.value);
       const { color } = dropShadowDefault;
+
+      dropShadowCurrent.offsetX = offsetX;
+      dropShadowCurrent.offsetY = offsetY;
+      dropShadowCurrent.blurRadius = blurRadius;
 
       const dropshadowParams = { offsetX, offsetY, blurRadius, color };
 
@@ -228,7 +271,7 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
       },
       {
         // the original values have been halved after two zooms level out
-        scale: scale * 2,
+        scale: scale * 4,
         value: `bloom(${strength * invFactor}, ${radius * invFactor}px, ${threshold})`,
       }
     ];
