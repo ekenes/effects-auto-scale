@@ -61,11 +61,9 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
     color: new Color("#000000")
   };
 
-  let selectedLayer: FeatureLayer;
-
   const effects = {
-    "Bloom": setBloom(view.scale, bloomDefault),
-    "Drop shadow": setDropshadow(view.scale, dropShadowDefault)
+    "Bloom": setBloom({ scale: view.scale, ...bloomDefault }),
+    "Drop shadow": setDropshadow({ scale: view.scale, ...dropShadowDefault })
   };
 
   const createActions = (effects:any) => Object.keys(effects).map( (key: string) => new ActionToggle({ id: key, title: key, value: false }));
@@ -119,15 +117,24 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
         (item.panel.content as HTMLElement).style.display = "block";
 
         const panelContent = item.panel.content as any;
-        sliders = [ ...panelContent.getElementsByTagName("calcite-slider")];
+
+        const [ scaleCheckbox ] = [ ...panelContent.getElementsByTagName("calcite-checkbox") ];
+
+        sliders = [ ...panelContent.getElementsByTagName("calcite-slider") ];
         sliders[0].value = bloomDefault.strength.toString();
         sliders[1].value = bloomDefault.radius.toString();
         sliders[2].value = bloomDefault.threshold.toString();
 
         sliders.forEach( (control: HTMLElement) => {
           control.addEventListener("calciteSliderChange", () => {
-            updateBloomEffect(view.scale, layer)
+            const scale = scaleCheckbox.checked ? view.scale : null;
+            updateBloomEffect({ scale, layer })
           });
+        });
+
+        scaleCheckbox.addEventListener("calciteCheckboxChange", () => {
+          const scale = scaleCheckbox.checked ? view.scale : null;
+          updateBloomEffect({ scale, layer})
         });
       }
       if(id === "Drop shadow"){
@@ -138,6 +145,9 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
         (item.panel.content as HTMLElement).style.display = "block";
 
         const panelContent = item.panel.content as any;
+
+        const [ scaleCheckbox ] = [ ...panelContent.getElementsByTagName("calcite-checkbox") ];
+
         sliders = [ ...panelContent.getElementsByTagName("calcite-slider") ];
         sliders[0].value = dropShadowDefault.offsetX.toString();
         sliders[1].value = dropShadowDefault.offsetY.toString();
@@ -145,8 +155,14 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
 
         sliders.forEach( (control: HTMLElement) => {
           control.addEventListener("calciteSliderChange", () => {
-            updateDropshadowEffect(view.scale, layer)
+            const scale = scaleCheckbox.checked ? view.scale : null;
+            updateDropshadowEffect({ scale, layer})
           });
+        });
+
+        scaleCheckbox.addEventListener("calciteCheckboxChange", () => {
+          const scale = scaleCheckbox.checked ? view.scale : null;
+          updateDropshadowEffect({ scale, layer})
         });
       }
     } else {
@@ -154,7 +170,13 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
       layer.effect = null;
     }
 
-    function updateBloomEffect (scale: number, layer: FeatureLayer) {
+    interface UpdateEffectParams {
+      scale?: number;
+      layer: FeatureLayer;
+    }
+
+    function updateBloomEffect (params: UpdateEffectParams) {
+      const { scale, layer } = params;
       const bloomStrengthControl = sliders[0] as HTMLInputElement;
       const bloomRadiusControl = sliders[1] as HTMLInputElement;
       const bloomThresholdControl = sliders[2] as HTMLInputElement;
@@ -162,13 +184,15 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
       const radius = parseFloat(bloomRadiusControl.value);
       const threshold = parseFloat(bloomThresholdControl.value);
 
-      const bloomParams = { strength, radius, threshold };
+      const bloomParams = { scale, strength, radius, threshold };
 
-      const effects = setBloom(scale, bloomParams);
+      const effects = setBloom(bloomParams);
+      console.log(effects);
       layer.effect = effects;
     }
 
-    function updateDropshadowEffect (scale: number, layer: FeatureLayer) {
+    function updateDropshadowEffect (params: UpdateEffectParams) {
+      const { scale, layer } = params;
       const dropshadowOffsetXControl = sliders[0] as HTMLInputElement;
       const dropshadowOffsetYControl = sliders[1] as HTMLInputElement;
       const dropshadowBlurRadiusControl = sliders[2] as HTMLInputElement;
@@ -177,9 +201,10 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
       const blurRadius = parseFloat(dropshadowBlurRadiusControl.value);
       const { color } = dropShadowDefault;
 
-      const dropshadowParams = { offsetX, offsetY, blurRadius, color };
+      const dropshadowParams = { scale, offsetX, offsetY, blurRadius, color };
 
-      const effects = setDropshadow(scale, dropshadowParams);
+      const effects = setDropshadow(dropshadowParams);
+      console.log(effects);
       layer.effect = effects;
     }
   }
@@ -210,10 +235,16 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
     strength: number;
     radius: number;
     threshold: number;
+    scale?: number;
   }
 
-  function setBloom(scale: number, params: BloomParams): esri.Effect {
-    const { strength, radius, threshold } = params;
+  function setBloom(params: BloomParams): esri.Effect {
+    const { scale, strength, radius, threshold } = params;
+
+    if(!scale){
+      return `bloom(${strength}, ${radius}px, ${threshold})`;
+    }
+
     const factor = 2;
     const invFactor = 1 / factor;
     return [
@@ -235,14 +266,20 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
   }
 
   interface DropshadowParams {
+    scale?: number;
     offsetX: number;
     offsetY: number;
     blurRadius: number;
     color: Color;
   }
 
-  function setDropshadow(scale: number, params: DropshadowParams): esri.Effect {
-    const { offsetX, offsetY, blurRadius, color } = params;
+  function setDropshadow(params: DropshadowParams): esri.Effect {
+    const { scale, offsetX, offsetY, blurRadius, color } = params;
+
+    if(!scale){
+      return `drop-shadow(${offsetX}px, ${offsetY}px, ${blurRadius}px, ${color})`;
+    }
+
     const factor = 2;
     const invFactor = 1 / factor;
     return [

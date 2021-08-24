@@ -1,3 +1,14 @@
+var __assign = (this && this.__assign) || function () {
+    __assign = Object.assign || function(t) {
+        for (var s, i = 1, n = arguments.length; i < n; i++) {
+            s = arguments[i];
+            for (var p in s) if (Object.prototype.hasOwnProperty.call(s, p))
+                t[p] = s[p];
+        }
+        return t;
+    };
+    return __assign.apply(this, arguments);
+};
 var __awaiter = (this && this.__awaiter) || function (thisArg, _arguments, P, generator) {
     function adopt(value) { return value instanceof P ? value : new P(function (resolve) { resolve(value); }); }
     return new (P || (P = Promise))(function (resolve, reject) {
@@ -65,14 +76,20 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                     };
                     item.panel.content.style.display = "block";
                     var panelContent = item.panel.content;
+                    var scaleCheckbox_1 = __spreadArrays(panelContent.getElementsByTagName("calcite-checkbox"))[0];
                     sliders = __spreadArrays(panelContent.getElementsByTagName("calcite-slider"));
                     sliders[0].value = bloomDefault.strength.toString();
                     sliders[1].value = bloomDefault.radius.toString();
                     sliders[2].value = bloomDefault.threshold.toString();
                     sliders.forEach(function (control) {
                         control.addEventListener("calciteSliderChange", function () {
-                            updateBloomEffect(view.scale, layer);
+                            var scale = scaleCheckbox_1.checked ? view.scale : null;
+                            updateBloomEffect({ scale: scale, layer: layer });
                         });
+                    });
+                    scaleCheckbox_1.addEventListener("calciteCheckboxChange", function () {
+                        var scale = scaleCheckbox_1.checked ? view.scale : null;
+                        updateBloomEffect({ scale: scale, layer: layer });
                     });
                 }
                 if (id === "Drop shadow") {
@@ -82,14 +99,20 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                     };
                     item.panel.content.style.display = "block";
                     var panelContent = item.panel.content;
+                    var scaleCheckbox_2 = __spreadArrays(panelContent.getElementsByTagName("calcite-checkbox"))[0];
                     sliders = __spreadArrays(panelContent.getElementsByTagName("calcite-slider"));
                     sliders[0].value = dropShadowDefault.offsetX.toString();
                     sliders[1].value = dropShadowDefault.offsetY.toString();
                     sliders[2].value = dropShadowDefault.blurRadius.toString();
                     sliders.forEach(function (control) {
                         control.addEventListener("calciteSliderChange", function () {
-                            updateDropshadowEffect(view.scale, layer);
+                            var scale = scaleCheckbox_2.checked ? view.scale : null;
+                            updateDropshadowEffect({ scale: scale, layer: layer });
                         });
+                    });
+                    scaleCheckbox_2.addEventListener("calciteCheckboxChange", function () {
+                        var scale = scaleCheckbox_2.checked ? view.scale : null;
+                        updateDropshadowEffect({ scale: scale, layer: layer });
                     });
                 }
             }
@@ -97,18 +120,21 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                 item.panel.open = false;
                 layer.effect = null;
             }
-            function updateBloomEffect(scale, layer) {
+            function updateBloomEffect(params) {
+                var scale = params.scale, layer = params.layer;
                 var bloomStrengthControl = sliders[0];
                 var bloomRadiusControl = sliders[1];
                 var bloomThresholdControl = sliders[2];
                 var strength = parseFloat(bloomStrengthControl.value);
                 var radius = parseFloat(bloomRadiusControl.value);
                 var threshold = parseFloat(bloomThresholdControl.value);
-                var bloomParams = { strength: strength, radius: radius, threshold: threshold };
-                var effects = setBloom(scale, bloomParams);
+                var bloomParams = { scale: scale, strength: strength, radius: radius, threshold: threshold };
+                var effects = setBloom(bloomParams);
+                console.log(effects);
                 layer.effect = effects;
             }
-            function updateDropshadowEffect(scale, layer) {
+            function updateDropshadowEffect(params) {
+                var scale = params.scale, layer = params.layer;
                 var dropshadowOffsetXControl = sliders[0];
                 var dropshadowOffsetYControl = sliders[1];
                 var dropshadowBlurRadiusControl = sliders[2];
@@ -116,8 +142,9 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                 var offsetY = parseFloat(dropshadowOffsetYControl.value);
                 var blurRadius = parseFloat(dropshadowBlurRadiusControl.value);
                 var color = dropShadowDefault.color;
-                var dropshadowParams = { offsetX: offsetX, offsetY: offsetY, blurRadius: blurRadius, color: color };
-                var effects = setDropshadow(scale, dropshadowParams);
+                var dropshadowParams = { scale: scale, offsetX: offsetX, offsetY: offsetY, blurRadius: blurRadius, color: color };
+                var effects = setDropshadow(dropshadowParams);
+                console.log(effects);
                 layer.effect = effects;
             }
         }
@@ -127,8 +154,11 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                 createActions(effects)
             ];
         }
-        function setBloom(scale, params) {
-            var strength = params.strength, radius = params.radius, threshold = params.threshold;
+        function setBloom(params) {
+            var scale = params.scale, strength = params.strength, radius = params.radius, threshold = params.threshold;
+            if (!scale) {
+                return "bloom(" + strength + ", " + radius + "px, " + threshold + ")";
+            }
             var factor = 2;
             var invFactor = 1 / factor;
             return [
@@ -148,8 +178,11 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                 }
             ];
         }
-        function setDropshadow(scale, params) {
-            var offsetX = params.offsetX, offsetY = params.offsetY, blurRadius = params.blurRadius, color = params.color;
+        function setDropshadow(params) {
+            var scale = params.scale, offsetX = params.offsetX, offsetY = params.offsetY, blurRadius = params.blurRadius, color = params.color;
+            if (!scale) {
+                return "drop-shadow(" + offsetX + "px, " + offsetY + "px, " + blurRadius + "px, " + color + ")";
+            }
             var factor = 2;
             var invFactor = 1 / factor;
             return [
@@ -169,7 +202,7 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                 }
             ];
         }
-        var webmap, map, view, bloomDefault, dropShadowDefault, selectedLayer, effects, createActions, layerList, basemapLayerList;
+        var webmap, map, view, bloomDefault, dropShadowDefault, effects, createActions, layerList, basemapLayerList;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -215,8 +248,8 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                         color: new Color("#000000")
                     };
                     effects = {
-                        "Bloom": setBloom(view.scale, bloomDefault),
-                        "Drop shadow": setDropshadow(view.scale, dropShadowDefault)
+                        "Bloom": setBloom(__assign({ scale: view.scale }, bloomDefault)),
+                        "Drop shadow": setDropshadow(__assign({ scale: view.scale }, dropShadowDefault))
                     };
                     createActions = function (effects) { return Object.keys(effects).map(function (key) { return new ActionToggle({ id: key, title: key, value: false }); }); };
                     layerList = new LayerList({

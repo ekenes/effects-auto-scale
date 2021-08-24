@@ -36,3 +36,7 @@ select {
   /* width: 200px; */
   display: none;
 }
+
+.checkbox-container{
+  padding-bottom: 8px;
+}
