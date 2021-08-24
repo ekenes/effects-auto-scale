@@ -23,3 +23,16 @@ select {
   font-size: 12pt;
   padding: 10px 5px 0px 5px;
 }
+
+#bloom-controls{
+  padding: 10px;
+  /* width: 200px; */
+  display:none;
+}
+
+#dropshadow-controls{
+  padding: 10px;
+  background-color: white;
+  /* width: 200px; */
+  display: none;
+}

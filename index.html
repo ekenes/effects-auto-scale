@@ -2,7 +2,13 @@
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="initial-scale=1, maximum-scale=1,user-scalable=no"/>
-    <title>Defaults 🔧</title>
+    <title>Auto scale effects ⚖️</title>
+
+    <script type="module" src="https://js.arcgis.com/calcite-components/1.0.0-beta.61/calcite.esm.js"></script>
+    <script nomodule="" src="https://js.arcgis.com/calcite-components/1.0.0-beta.61/calcite.js"></script>
+
+    <link rel="stylesheet" type="text/css" href="https://js.arcgis.com/calcite-components/1.0.0-beta.61/calcite.css" />
+
     <link rel="stylesheet" href="https://js.arcgis.com/next/esri/css/main.css">
     <link rel="stylesheet" href="app/main.css">
     <script>
@@ -20,8 +26,25 @@
   </head>
   <body>
     <div id="titleDiv" class="esri-widget">
-      <div id="titleText">Defaults 🔧</div>
+      <div id="titleText">Auto scale effects ⚖️</div>
       <div id="dataDescription">Expand the ... for a layer and select an effect</div>
+    </div>
+    <div id="bloom-controls">
+      Strength
+      <calcite-slider id="bloom-strength-control" min="0" max="5" precise ticks="5" value="3" label-ticks></calcite-slider>
+      Radius
+      <calcite-slider id="bloom-radius-control" min="0" max="5" precise ticks="5" value="3" label-ticks></calcite-slider>
+      Threshold
+      <calcite-slider id="bloom-threshold-control" min="0" max="5" precise ticks="5" value="3" label-ticks></calcite-slider>
+    </div>
+    <div id="dropshadow-controls">
+      X offset
+      <calcite-slider id="dropshadow-offsetX-control" min="0" max="5" precise ticks="5" value="3" label-ticks></calcite-slider>
+      Y offset
+      <calcite-slider id="dropshadow-offsetY-control" min="0" max="5" precise ticks="5" value="3" label-ticks></calcite-slider>
+      Blur radius
+      <calcite-slider id="dropshadow-blurRadius-control"min="0" max="5" precise ticks="5" value="3" label-ticks></calcite-slider>
+      <!-- Color Picker could go here -->
     </div>
     <div id="viewDiv"></div>
     <script>require(["app/main"]);</script>

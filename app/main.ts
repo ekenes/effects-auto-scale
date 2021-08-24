@@ -11,6 +11,9 @@ import BasemapGallery = require("esri/widgets/BasemapGallery");
 import Color = require("esri/Color");
 
 import { getUrlParams } from "./urlParams";
+import FeatureLayer = require("esri/layers/FeatureLayer");
+import Feature = require("esri/widgets/Feature");
+import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
 
 ( async () => {
 
@@ -45,16 +48,24 @@ import { getUrlParams } from "./urlParams";
     expanded: false
   }), "bottom-left");
 
+  const bloomDefault = {
+    strength: 2,
+    radius: 1,
+    threshold: 0.1
+  };
+
+  const dropShadowDefault = {
+    offsetX: 1,
+    offsetY: 1,
+    blurRadius: 2,
+    color: new Color("#000000")
+  };
+
+  let selectedLayer: FeatureLayer;
+
   const effects = {
-    "Bloom": `bloom(2,1px,0.1)`,
-    "Blur": `blur(2px)`,
-    "Brightness": `brightness(150%)`,
-    "Contrast": `contrast(200%)`,
-    "Drop shadow": `drop-shadow(1px,1px,2px,#000000)`,
-    "Grayscale": `grayscale(100%)`,
-    "Hue rotate": `hue-rotate(100deg)`,
-    "Invert": `invert(100%)`,
-    "Opacity": `opacity(50%)`
+    "Bloom": setBloom(view.scale, bloomDefault),
+    "Drop shadow": setDropshadow(view.scale, dropShadowDefault)
   };
 
   const createActions = (effects:any) => Object.keys(effects).map( (key: string) => new ActionToggle({ id: key, title: key, value: false }));
@@ -83,17 +94,89 @@ import { getUrlParams } from "./urlParams";
   }), "top-right");
 
   function triggerAction (event: esri.LayerListTriggerActionEvent) {
-    const { item } = event;
+    const { action, item } = event;
+    const { id } = action;
     const layer = item.layer as esri.FeatureLayer;
+
     const actions = item.actionsSections.reduce((p, c) => p.concat(c));
 
-    const effect = actions.map(action => (action as ActionToggle).value ? effects[action.id] : '')
-      .reduce((p,c) => `${p} ${c}`)
-      .trim();
+    actions.forEach(action => {
+      (action as ActionToggle).value = (action as ActionToggle).value && action.id === id;
+    });
 
-      console.log(effect)
+    console.log(event)
+    selectedLayer = layer;
 
-    layer.effect = effect.length > 0 ? effect : null;
+    const bloomControlsContainer = document.getElementById("bloom-controls") as HTMLElement;
+    const dropshadowControlsContainer = document.getElementById("dropshadow-controls") as HTMLElement;
+    let sliders: HTMLElement[];
+
+    if ((action as esri.ActionToggle).value){
+      layer.effect = effects[id];
+
+      if(id === "Bloom"){
+        item.panel = {
+          content: bloomControlsContainer.cloneNode(true),
+          open: true
+        } as esri.ListItemPanel;
+        (item.panel.content as HTMLElement).style.display = "block";
+
+        const panelContent = item.panel.content as any;
+        sliders = [ ...panelContent.getElementsByTagName("calcite-slider")];
+        sliders.forEach( (control: HTMLElement) => {
+          control.addEventListener("calciteSliderChange", () => {
+            updateBloomEffect(view.scale, layer)
+          });
+        });
+      }
+      if(id === "Drop shadow"){
+        item.panel = {
+          content: dropshadowControlsContainer.cloneNode(true),
+          open: true
+        } as esri.ListItemPanel;
+        (item.panel.content as HTMLElement).style.display = "block";
+
+        const panelContent = item.panel.content as any;
+        sliders = [ ...panelContent.getElementsByTagName("calcite-slider") ];
+        sliders.forEach( (control: HTMLElement) => {
+          control.addEventListener("calciteSliderChange", () => {
+            updateDropshadowEffect(view.scale, layer)
+          });
+        });
+      }
+    } else {
+      item.panel.open = false;
+      layer.effect = null;
+    }
+
+    function updateBloomEffect (scale: number, layer: FeatureLayer) {
+      const bloomStrengthControl = sliders[0] as HTMLInputElement;
+      const bloomRadiusControl = sliders[1] as HTMLInputElement;
+      const bloomThresholdControl = sliders[2] as HTMLInputElement;
+      const strength = parseFloat(bloomStrengthControl.value);
+      const radius = parseFloat(bloomRadiusControl.value);
+      const threshold = parseFloat(bloomThresholdControl.value);
+
+      const bloomParams = { strength, radius, threshold };
+
+      const effects = setBloom(scale, bloomParams);
+      layer.effect = effects;
+    }
+
+    function updateDropshadowEffect (scale: number, layer: FeatureLayer) {
+      const dropshadowOffsetXControl = sliders[0] as HTMLInputElement;
+      const dropshadowOffsetYControl = sliders[1] as HTMLInputElement;
+      const dropshadowBlurRadiusControl = sliders[2] as HTMLInputElement;
+      const offsetX = parseFloat(dropshadowOffsetXControl.value);
+      const offsetY = parseFloat(dropshadowOffsetYControl.value);
+      const blurRadius = parseFloat(dropshadowBlurRadiusControl.value);
+      const { color } = dropShadowDefault;
+
+      const dropshadowParams = { offsetX, offsetY, blurRadius, color };
+
+      const effects = setDropshadow(scale, dropshadowParams);
+      layer.effect = effects;
+    }
   }
 
   layerList.on("trigger-action", triggerAction);
@@ -132,16 +215,16 @@ import { getUrlParams } from "./urlParams";
       {
         // the original values have been doubled after two zoom level in
         scale: scale * 0.25,
-        value: `bloom(${strength * factor}, ${radius * factor}, ${threshold})`,
+        value: `bloom(${strength * factor}, ${radius * factor}px, ${threshold})`,
       },
       {
         scale,
-        value: `bloom(${strength}, ${radius}, ${threshold})`,
+        value: `bloom(${strength}, ${radius}px, ${threshold})`,
       },
       {
         // the original values have been halved after two zooms level out
         scale: scale * 2,
-        value: `bloom(${strength * invFactor}, ${radius * invFactor}, ${threshold})`,
+        value: `bloom(${strength * invFactor}, ${radius * invFactor}px, ${threshold})`,
       }
     ];
   }

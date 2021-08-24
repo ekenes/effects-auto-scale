@@ -34,19 +34,88 @@ var __generator = (this && this.__generator) || function (thisArg, body) {
         if (op[0] & 5) throw op[1]; return { value: op[0] ? op[1] : void 0, done: true };
     }
 };
-define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets/Legend", "esri/widgets/Expand", "esri/widgets/LayerList", "esri/widgets/BasemapLayerList", "esri/support/actions/ActionToggle", "esri/widgets/BasemapGallery", "./urlParams"], function (require, exports, WebMap, MapView, Legend, Expand, LayerList, BasemapLayerList, ActionToggle, BasemapGallery, urlParams_1) {
+var __spreadArrays = (this && this.__spreadArrays) || function () {
+    for (var s = 0, i = 0, il = arguments.length; i < il; i++) s += arguments[i].length;
+    for (var r = Array(s), k = 0, i = 0; i < il; i++)
+        for (var a = arguments[i], j = 0, jl = a.length; j < jl; j++, k++)
+            r[k] = a[j];
+    return r;
+};
+define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets/Legend", "esri/widgets/Expand", "esri/widgets/LayerList", "esri/widgets/BasemapLayerList", "esri/support/actions/ActionToggle", "esri/widgets/BasemapGallery", "esri/Color", "./urlParams"], function (require, exports, WebMap, MapView, Legend, Expand, LayerList, BasemapLayerList, ActionToggle, BasemapGallery, Color, urlParams_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     (function () { return __awaiter(void 0, void 0, void 0, function () {
         function triggerAction(event) {
-            var item = event.item;
+            var action = event.action, item = event.item;
+            var id = action.id;
             var layer = item.layer;
             var actions = item.actionsSections.reduce(function (p, c) { return p.concat(c); });
-            var effect = actions.map(function (action) { return action.value ? effects[action.id] : ''; })
-                .reduce(function (p, c) { return p + " " + c; })
-                .trim();
-            console.log(effect);
-            layer.effect = effect.length > 0 ? effect : null;
+            actions.forEach(function (action) {
+                action.value = action.value && action.id === id;
+            });
+            console.log(event);
+            selectedLayer = layer;
+            var bloomControlsContainer = document.getElementById("bloom-controls");
+            var dropshadowControlsContainer = document.getElementById("dropshadow-controls");
+            var sliders;
+            if (action.value) {
+                layer.effect = effects[id];
+                if (id === "Bloom") {
+                    item.panel = {
+                        content: bloomControlsContainer.cloneNode(true),
+                        open: true
+                    };
+                    item.panel.content.style.display = "block";
+                    var panelContent = item.panel.content;
+                    sliders = __spreadArrays(panelContent.getElementsByTagName("calcite-slider"));
+                    sliders.forEach(function (control) {
+                        control.addEventListener("calciteSliderChange", function () {
+                            updateBloomEffect(view.scale, layer);
+                        });
+                    });
+                }
+                if (id === "Drop shadow") {
+                    item.panel = {
+                        content: dropshadowControlsContainer.cloneNode(true),
+                        open: true
+                    };
+                    item.panel.content.style.display = "block";
+                    var panelContent = item.panel.content;
+                    sliders = __spreadArrays(panelContent.getElementsByTagName("calcite-slider"));
+                    sliders.forEach(function (control) {
+                        control.addEventListener("calciteSliderChange", function () {
+                            updateDropshadowEffect(view.scale, layer);
+                        });
+                    });
+                }
+            }
+            else {
+                item.panel.open = false;
+                layer.effect = null;
+            }
+            function updateBloomEffect(scale, layer) {
+                var bloomStrengthControl = sliders[0];
+                var bloomRadiusControl = sliders[1];
+                var bloomThresholdControl = sliders[2];
+                var strength = parseFloat(bloomStrengthControl.value);
+                var radius = parseFloat(bloomRadiusControl.value);
+                var threshold = parseFloat(bloomThresholdControl.value);
+                var bloomParams = { strength: strength, radius: radius, threshold: threshold };
+                var effects = setBloom(scale, bloomParams);
+                layer.effect = effects;
+            }
+            function updateDropshadowEffect(scale, layer) {
+                var dropshadowOffsetXControl = sliders[0];
+                var dropshadowOffsetYControl = sliders[1];
+                var dropshadowBlurRadiusControl = sliders[2];
+                var offsetX = parseFloat(dropshadowOffsetXControl.value);
+                var offsetY = parseFloat(dropshadowOffsetYControl.value);
+                var blurRadius = parseFloat(dropshadowBlurRadiusControl.value);
+                var color = dropShadowDefault.color;
+                var dropshadowParams = { offsetX: offsetX, offsetY: offsetY, blurRadius: blurRadius, color: color };
+                var effects = setDropshadow(scale, dropshadowParams);
+                layer.effect = effects;
+            }
         }
         function basemapListItemCreatedFunction(event) {
             var item = event.item;
@@ -62,16 +131,16 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                 {
                     // the original values have been doubled after two zoom level in
                     scale: scale * 0.25,
-                    value: "bloom(" + strength * factor + ", " + radius * factor + ", " + threshold + ")",
+                    value: "bloom(" + strength * factor + ", " + radius * factor + "px, " + threshold + ")",
                 },
                 {
                     scale: scale,
-                    value: "bloom(" + strength + ", " + radius + ", " + threshold + ")",
+                    value: "bloom(" + strength + ", " + radius + "px, " + threshold + ")",
                 },
                 {
                     // the original values have been halved after two zooms level out
                     scale: scale * 2,
-                    value: "bloom(" + strength * invFactor + ", " + radius * invFactor + ", " + threshold + ")",
+                    value: "bloom(" + strength * invFactor + ", " + radius * invFactor + "px, " + threshold + ")",
                 }
             ];
         }
@@ -96,7 +165,7 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                 }
             ];
         }
-        var webmap, map, view, effects, createActions, layerList, basemapLayerList;
+        var webmap, map, view, bloomDefault, dropShadowDefault, selectedLayer, effects, createActions, layerList, basemapLayerList;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -130,16 +199,20 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                         view: view,
                         expanded: false
                     }), "bottom-left");
+                    bloomDefault = {
+                        strength: 2,
+                        radius: 1,
+                        threshold: 0.1
+                    };
+                    dropShadowDefault = {
+                        offsetX: 1,
+                        offsetY: 1,
+                        blurRadius: 2,
+                        color: new Color("#000000")
+                    };
                     effects = {
-                        "Bloom": "bloom(2,1px,0.1)",
-                        "Blur": "blur(2px)",
-                        "Brightness": "brightness(150%)",
-                        "Contrast": "contrast(200%)",
-                        "Drop shadow": "drop-shadow(1px,1px,2px,#000000)",
-                        "Grayscale": "grayscale(100%)",
-                        "Hue rotate": "hue-rotate(100deg)",
-                        "Invert": "invert(100%)",
-                        "Opacity": "opacity(50%)"
+                        "Bloom": setBloom(view.scale, bloomDefault),
+                        "Drop shadow": setDropshadow(view.scale, dropShadowDefault)
                     };
                     createActions = function (effects) { return Object.keys(effects).map(function (key) { return new ActionToggle({ id: key, title: key, value: false }); }); };
                     layerList = new LayerList({
