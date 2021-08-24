@@ -104,12 +104,9 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
       (action as ActionToggle).value = (action as ActionToggle).value && action.id === id;
     });
 
-    console.log(event)
-    selectedLayer = layer;
-
     const bloomControlsContainer = document.getElementById("bloom-controls") as HTMLElement;
     const dropshadowControlsContainer = document.getElementById("dropshadow-controls") as HTMLElement;
-    let sliders: HTMLElement[];
+    let sliders: HTMLInputElement[];
 
     if ((action as esri.ActionToggle).value){
       layer.effect = effects[id];
@@ -123,6 +120,10 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
 
         const panelContent = item.panel.content as any;
         sliders = [ ...panelContent.getElementsByTagName("calcite-slider")];
+        sliders[0].value = bloomDefault.strength.toString();
+        sliders[1].value = bloomDefault.radius.toString();
+        sliders[2].value = bloomDefault.threshold.toString();
+
         sliders.forEach( (control: HTMLElement) => {
           control.addEventListener("calciteSliderChange", () => {
             updateBloomEffect(view.scale, layer)
@@ -138,6 +139,10 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
 
         const panelContent = item.panel.content as any;
         sliders = [ ...panelContent.getElementsByTagName("calcite-slider") ];
+        sliders[0].value = dropShadowDefault.offsetX.toString();
+        sliders[1].value = dropShadowDefault.offsetY.toString();
+        sliders[2].value = dropShadowDefault.blurRadius.toString();
+
         sliders.forEach( (control: HTMLElement) => {
           control.addEventListener("calciteSliderChange", () => {
             updateDropshadowEffect(view.scale, layer)

@@ -53,8 +53,6 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
             actions.forEach(function (action) {
                 action.value = action.value && action.id === id;
             });
-            console.log(event);
-            selectedLayer = layer;
             var bloomControlsContainer = document.getElementById("bloom-controls");
             var dropshadowControlsContainer = document.getElementById("dropshadow-controls");
             var sliders;
@@ -68,6 +66,9 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                     item.panel.content.style.display = "block";
                     var panelContent = item.panel.content;
                     sliders = __spreadArrays(panelContent.getElementsByTagName("calcite-slider"));
+                    sliders[0].value = bloomDefault.strength.toString();
+                    sliders[1].value = bloomDefault.radius.toString();
+                    sliders[2].value = bloomDefault.threshold.toString();
                     sliders.forEach(function (control) {
                         control.addEventListener("calciteSliderChange", function () {
                             updateBloomEffect(view.scale, layer);
@@ -82,6 +83,9 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                     item.panel.content.style.display = "block";
                     var panelContent = item.panel.content;
                     sliders = __spreadArrays(panelContent.getElementsByTagName("calcite-slider"));
+                    sliders[0].value = dropShadowDefault.offsetX.toString();
+                    sliders[1].value = dropShadowDefault.offsetY.toString();
+                    sliders[2].value = dropShadowDefault.blurRadius.toString();
                     sliders.forEach(function (control) {
                         control.addEventListener("calciteSliderChange", function () {
                             updateDropshadowEffect(view.scale, layer);
