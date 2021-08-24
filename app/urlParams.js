@@ -4,7 +4,7 @@ define(["require", "exports"], function (require, exports) {
     function getUrlParams() {
         var queryParams = document.location.search.substr(1);
         var result = {};
-        var defaultWebmapId = "bb229c40e7af4d84ac63f6a66268c0dc";
+        var defaultWebmapId = "2cd897d28ca842ecaa5df6bfe067c407";
         queryParams.split("&").forEach(function (part) {
             var item = part.split("=");
             result[item[0]] = decodeURIComponent(item[1]);
