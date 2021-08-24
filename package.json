@@ -1,5 +1,5 @@
 {
-  "name": "effects-global-defaults",
+  "name": "effects-auto-scale",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -8,16 +8,16 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/ekenes/effects-global-defaults.git"
+    "url": "git+https://github.com/ekenes/effects-auto-scale.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/ekenes/effects-global-defaults/issues"
+    "url": "https://github.com/ekenes/effects-auto-scale/issues"
   },
-  "homepage": "https://github.com/ekenes/effects-global-defaults#readme",
+  "homepage": "https://github.com/ekenes/effects-auto-scale#readme",
   "dependencies": {
-    "@types/arcgis-js-api": "^4.19.0"
+    "@types/arcgis-js-api": "^4.20.0"
   }
 }
