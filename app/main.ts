@@ -228,7 +228,7 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
       },
       {
         // the original values have been halved after two zooms level out
-        scale: scale * 2,
+        scale: scale * 4,
         value: `bloom(${strength * invFactor}, ${radius * invFactor}px, ${threshold})`,
       }
     ];
@@ -257,7 +257,7 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
       },
       {
         // the original values have been halved after two zooms level out
-        scale: scale * 2,
+        scale: scale * 4,
         value: `drop-shadow(${offsetX * invFactor}px, ${offsetY * invFactor}px, ${blurRadius * invFactor}px, ${color})`,
       }
     ];
