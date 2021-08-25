@@ -57,6 +57,10 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
     Object.defineProperty(exports, "__esModule", { value: true });
     (function () { return __awaiter(void 0, void 0, void 0, function () {
         function triggerAction(event) {
+            if (scaleWatcher) {
+                scaleWatcher.remove();
+                scaleWatcher = null;
+            }
             var action = event.action, item = event.item;
             var id = action.id;
             var layer = item.layer;
@@ -90,6 +94,22 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                     scaleCheckbox_1.addEventListener("calciteCheckboxChange", function () {
                         var scale = scaleCheckbox_1.checked ? view.scale : null;
                         updateBloomEffect({ scale: scale, layer: layer });
+                    });
+                    scaleWatcher = view.watch("scale", function (viewScale) {
+                        console.log("scale", view.scale);
+                        console.log("effects", layer.effect);
+                        if (viewScale > effects[2].scale) {
+                            return;
+                        }
+                        if (viewScale > effects[1].scale) {
+                            var referenceScale = effects[1].scale;
+                            viewScale;
+                        }
+                        if (viewScale > effects[0].scale) {
+                        }
+                        if (viewScale < effects[0].scale) {
+                            return;
+                        }
                     });
                 }
                 if (id === "Drop shadow") {
@@ -129,6 +149,9 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                 var radius = parseFloat(bloomRadiusControl.value);
                 var threshold = parseFloat(bloomThresholdControl.value);
                 var bloomParams = { scale: scale, strength: strength, radius: radius, threshold: threshold };
+                bloomCurrent.strength = strength;
+                bloomCurrent.radius = radius;
+                bloomCurrent.threshold = threshold;
                 var effects = setBloom(bloomParams);
                 console.log(effects);
                 layer.effect = effects;
@@ -143,6 +166,9 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                 var blurRadius = parseFloat(dropshadowBlurRadiusControl.value);
                 var color = dropShadowDefault.color;
                 var dropshadowParams = { scale: scale, offsetX: offsetX, offsetY: offsetY, blurRadius: blurRadius, color: color };
+                dropShadowCurrent.offsetX = offsetX;
+                dropShadowCurrent.offsetY = offsetY;
+                dropShadowCurrent.blurRadius = blurRadius;
                 var effects = setDropshadow(dropshadowParams);
                 console.log(effects);
                 layer.effect = effects;
@@ -202,7 +228,7 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                 }
             ];
         }
-        var webmap, map, view, bloomDefault, dropShadowDefault, effects, createActions, layerList, basemapLayerList;
+        var webmap, map, view, bloomDefault, dropShadowDefault, bloomCurrent, dropShadowCurrent, effects, createActions, layerList, scaleWatcher, basemapLayerList;
         return __generator(this, function (_a) {
             switch (_a.label) {
                 case 0:
@@ -247,6 +273,8 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                         blurRadius: 2,
                         color: new Color("#000000")
                     };
+                    bloomCurrent = bloomDefault;
+                    dropShadowCurrent = dropShadowDefault;
                     effects = {
                         "Bloom": setBloom(__assign({ scale: view.scale }, bloomDefault)),
                         "Drop shadow": setDropshadow(__assign({ scale: view.scale }, dropShadowDefault))
@@ -270,6 +298,7 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                         content: layerList,
                         group: "top-right"
                     }), "top-right");
+                    scaleWatcher = null;
                     layerList.on("trigger-action", triggerAction);
                     basemapLayerList = new BasemapLayerList({
                         view: view,
