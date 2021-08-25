@@ -12,8 +12,7 @@ import Color = require("esri/Color");
 
 import { getUrlParams } from "./urlParams";
 import FeatureLayer = require("esri/layers/FeatureLayer");
-import Feature = require("esri/widgets/Feature");
-import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
+import { parse } from "esri/views/layers/effects/parser";
 
 ( async () => {
 
@@ -131,9 +130,18 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
         const [ scaleCheckbox ] = [ ...panelContent.getElementsByTagName("calcite-checkbox") ];
 
         sliders = [ ...panelContent.getElementsByTagName("calcite-slider") ];
-        sliders[0].value = bloomDefault.strength.toString();
-        sliders[1].value = bloomDefault.radius.toString();
-        sliders[2].value = bloomDefault.threshold.toString();
+        const bloomStrengthSlider = sliders[0];
+        const bloomRadiusSlider = sliders[1];
+        const bloomThresholdSlider = sliders[2];
+
+        const spanElements = [ ...panelContent.getElementsByTagName("span") ];
+        const effectiveStrengthSpan = spanElements[0] as HTMLSpanElement;
+        const effectiveRadiusSpan = spanElements[1] as HTMLSpanElement;
+        const effectiveThresholdSpan = spanElements[2] as HTMLSpanElement;
+
+        bloomStrengthSlider.value = bloomDefault.strength.toString();
+        bloomRadiusSlider.value = bloomDefault.radius.toString();
+        bloomThresholdSlider.value = bloomDefault.threshold.toString();
 
         sliders.forEach( (control: HTMLElement) => {
           control.addEventListener("calciteSliderChange", () => {
@@ -145,32 +153,86 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
         scaleCheckbox.addEventListener("calciteCheckboxChange", () => {
           const scale = scaleCheckbox.checked ? view.scale : null;
           updateBloomEffect({ scale, layer})
+
+          if(!scale){
+            effectiveStrengthSpan.innerText = "";
+            effectiveRadiusSpan.innerText = "";
+            effectiveThresholdSpan.innerText = "";
+          }
         });
+
+        // don't watch scale if scale checkbox isn't enabled
+        if(!scaleCheckbox.checked){
+          return;
+        }
 
         scaleWatcher = view.watch("scale", (viewScale) => {
           console.log("scale", view.scale);
-          console.log("effects", layer.effect);
 
-          if(viewScale > effects[2].scale){
+          const layerEffect = layer.effect;
+
+          if(viewScale > layerEffect[2].scale){
+            const { effects } = parse(layerEffect[2].value);
+            const effect: any = effects[0];
+
+            effectiveRadiusSpan.innerText = `(${effect.radius.toFixed(1).toString()})`;
+            effectiveStrengthSpan.innerText = `(${effect.strength.toFixed(1).toString()})`;
+            effectiveThresholdSpan.innerText = `(${effect.threshold.toFixed(1).toString()})`;
             return;
           }
 
-          if(viewScale > effects[1].scale){
-            const referenceScale = effects[1].scale;
-            viewScale
-          }
+          if(viewScale < layerEffect[0].scale){
+            const { effects } = parse(layerEffect[0].value);
+            const effect: any = effects[0];
 
-          if(viewScale > effects[0].scale){
-
-          }
-
-          if(viewScale < effects[0].scale){
+            effectiveRadiusSpan.innerText = `(${effect.radius.toFixed(1).toString()})`;
+            effectiveStrengthSpan.innerText = `(${effect.strength.toFixed(1).toString()})`;
+            effectiveThresholdSpan.innerText = `(${effect.threshold.toFixed(1).toString()})`;
             return;
           }
 
+          if(viewScale > layerEffect[1].scale){
+            const minScale = layerEffect[1].scale;
+            const maxScale = layerEffect[2].scale;
+            const factor = (viewScale - minScale) / (maxScale - minScale);
 
+            const minEffect: any = parse(layerEffect[1].value).effects[0];
+            const maxEffect: any = parse(layerEffect[2].value).effects[0];
 
-        })
+            const minRadius = minEffect.radius;
+            const maxRadius = maxEffect.radius;
+            const minStrength = minEffect.strength;
+            const maxStrength = maxEffect.strength;
+            const minThreshold = minEffect.threshold;
+            const maxThreshold = maxEffect.threshold;
+
+            effectiveRadiusSpan.innerText = `(${(minRadius + ((maxRadius - minRadius) * factor)).toFixed(1).toString()})`;
+            effectiveStrengthSpan.innerText = `(${(minStrength + ((maxStrength - minStrength) * factor)).toFixed(1).toString()})`;
+            effectiveThresholdSpan.innerText = `(${(minThreshold + ((maxThreshold - minThreshold) * factor)).toFixed(1).toString()})`;
+            return;
+          }
+
+          if(viewScale > layerEffect[0].scale){
+            const minScale = layerEffect[0].scale;
+            const maxScale = layerEffect[1].scale;
+            const factor = (viewScale - minScale) / (maxScale - minScale);
+
+            const minEffect: any = parse(layerEffect[0].value).effects[0];
+            const maxEffect: any = parse(layerEffect[1].value).effects[0];
+
+            const minRadius = minEffect.radius;
+            const maxRadius = maxEffect.radius;
+            const minStrength = minEffect.strength;
+            const maxStrength = maxEffect.strength;
+            const minThreshold = minEffect.threshold;
+            const maxThreshold = maxEffect.threshold;
+
+            effectiveRadiusSpan.innerText = `(${(minRadius + ((maxRadius - minRadius) * factor)).toFixed(1).toString()})`;
+            effectiveStrengthSpan.innerText = `(${(minStrength + ((maxStrength - minStrength) * factor)).toFixed(1).toString()})`;
+            effectiveThresholdSpan.innerText = `(${(minThreshold + ((maxThreshold - minThreshold) * factor)).toFixed(1).toString()})`;
+            return;
+          }
+        });
 
       }
       if(id === "Drop shadow"){
@@ -189,6 +251,11 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
         sliders[1].value = dropShadowDefault.offsetY.toString();
         sliders[2].value = dropShadowDefault.blurRadius.toString();
 
+        const spanElements = [ ...panelContent.getElementsByTagName("span") ];
+        const effectiveXoffsetSpan = spanElements[0] as HTMLSpanElement;
+        const effectiveYoffsetSpan = spanElements[1] as HTMLSpanElement;
+        const effectiveBlurradiusSpan = spanElements[2] as HTMLSpanElement;
+
         sliders.forEach( (control: HTMLElement) => {
           control.addEventListener("calciteSliderChange", () => {
             const scale = scaleCheckbox.checked ? view.scale : null;
@@ -199,6 +266,85 @@ import ListItemPanel = require("esri/widgets/LayerList/ListItemPanel");
         scaleCheckbox.addEventListener("calciteCheckboxChange", () => {
           const scale = scaleCheckbox.checked ? view.scale : null;
           updateDropshadowEffect({ scale, layer})
+
+          if(!scale){
+            effectiveXoffsetSpan.innerText = "";
+            effectiveYoffsetSpan.innerText = "";
+            effectiveBlurradiusSpan.innerText = "";
+          }
+        });
+
+        // don't watch scale if scale checkbox isn't enabled
+        if(!scaleCheckbox.checked){
+          return;
+        }
+
+        scaleWatcher = view.watch("scale", (viewScale) => {
+          console.log("scale", view.scale);
+
+          const layerEffect = layer.effect;
+
+          if(viewScale > layerEffect[2].scale){
+            const { effects } = parse(layerEffect[2].value);
+            const effect: any = effects[0];
+
+            effectiveXoffsetSpan.innerText = `(${effect.offsetX.toFixed(1).toString()})`;
+            effectiveYoffsetSpan.innerText = `(${effect.offsetY.toFixed(1).toString()})`;
+            effectiveBlurradiusSpan.innerText = `(${effect.blurRadius.toFixed(1).toString()})`;
+            return;
+          }
+
+          if(viewScale < layerEffect[0].scale){
+            const { effects } = parse(layerEffect[0].value);
+            const effect: any = effects[0];
+
+            effectiveXoffsetSpan.innerText = `(${effect.offsetX.toFixed(1).toString()})`;
+            effectiveYoffsetSpan.innerText = `(${effect.offsetY.toFixed(1).toString()})`;
+            effectiveBlurradiusSpan.innerText = `(${effect.blurRadius.toFixed(1).toString()})`;
+            return;
+          }
+
+          if(viewScale > layerEffect[1].scale){
+            const minScale = layerEffect[1].scale;
+            const maxScale = layerEffect[2].scale;
+            const factor = (viewScale - minScale) / (maxScale - minScale);
+
+            const minEffect: any = parse(layerEffect[1].value).effects[0];
+            const maxEffect: any = parse(layerEffect[2].value).effects[0];
+
+            const minOffsetX = minEffect.offsetX;
+            const maxOffsetX = maxEffect.offsetX;
+            const minOffsetY = minEffect.offsetY;
+            const maxOffsetY = maxEffect.offsetY;
+            const minBlurRadius = minEffect.blurRadius;
+            const maxBlurRadius = maxEffect.blurRadius;
+
+            effectiveXoffsetSpan.innerText = `(${(minOffsetX + ((maxOffsetX - minOffsetX) * factor)).toFixed(1).toString()})`;
+            effectiveYoffsetSpan.innerText = `(${(minOffsetY + ((maxOffsetY - minOffsetY) * factor)).toFixed(1).toString()})`;
+            effectiveBlurradiusSpan.innerText = `(${(minBlurRadius + ((maxBlurRadius - minBlurRadius) * factor)).toFixed(1).toString()})`;
+            return;
+          }
+
+          if(viewScale > layerEffect[0].scale){
+            const minScale = layerEffect[0].scale;
+            const maxScale = layerEffect[1].scale;
+            const factor = (viewScale - minScale) / (maxScale - minScale);
+
+            const minEffect: any = parse(layerEffect[0].value).effects[0];
+            const maxEffect: any = parse(layerEffect[1].value).effects[0];
+
+            const minOffsetX = minEffect.offsetX;
+            const maxOffsetX = maxEffect.offsetX;
+            const minOffsetY = minEffect.offsetY;
+            const maxOffsetY = maxEffect.offsetY;
+            const minBlurRadius = minEffect.blurRadius;
+            const maxBlurRadius = maxEffect.blurRadius;
+
+            effectiveXoffsetSpan.innerText = `(${(minOffsetX + ((maxOffsetX - minOffsetX) * factor)).toFixed(1).toString()})`;
+            effectiveYoffsetSpan.innerText = `(${(minOffsetY + ((maxOffsetY - minOffsetY) * factor)).toFixed(1).toString()})`;
+            effectiveBlurradiusSpan.innerText = `(${(minBlurRadius + ((maxBlurRadius - minBlurRadius) * factor)).toFixed(1).toString()})`;
+            return;
+          }
         });
       }
     } else {

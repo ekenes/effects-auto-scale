@@ -40,3 +40,7 @@ select {
 .checkbox-container{
   padding-bottom: 8px;
 }
+
+.effective-value{
+  color:#191818a6;
+}

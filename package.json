@@ -17,7 +17,8 @@
     "url": "https://github.com/ekenes/effects-auto-scale/issues"
   },
   "homepage": "https://github.com/ekenes/effects-auto-scale#readme",
-  "dependencies": {
-    "@types/arcgis-js-api": "^4.20.0"
+  "dependencies": {},
+  "devDependencies": {
+    "@types/arcgis-js-api": "http://localhost/arcgis-js-sdk-4/build-artifacts-scratch/data/api-reference/typings/arcgis-js-api-4.21.tgz"
   }
 }

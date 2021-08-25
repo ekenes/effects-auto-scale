@@ -52,7 +52,7 @@ var __spreadArrays = (this && this.__spreadArrays) || function () {
             r[k] = a[j];
     return r;
 };
-define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets/Legend", "esri/widgets/Expand", "esri/widgets/LayerList", "esri/widgets/BasemapLayerList", "esri/support/actions/ActionToggle", "esri/widgets/BasemapGallery", "esri/Color", "./urlParams"], function (require, exports, WebMap, MapView, Legend, Expand, LayerList, BasemapLayerList, ActionToggle, BasemapGallery, Color, urlParams_1) {
+define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets/Legend", "esri/widgets/Expand", "esri/widgets/LayerList", "esri/widgets/BasemapLayerList", "esri/support/actions/ActionToggle", "esri/widgets/BasemapGallery", "esri/Color", "./urlParams", "esri/views/layers/effects/parser"], function (require, exports, WebMap, MapView, Legend, Expand, LayerList, BasemapLayerList, ActionToggle, BasemapGallery, Color, urlParams_1, parser_1) {
     "use strict";
     Object.defineProperty(exports, "__esModule", { value: true });
     (function () { return __awaiter(void 0, void 0, void 0, function () {
@@ -82,9 +82,16 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                     var panelContent = item.panel.content;
                     var scaleCheckbox_1 = __spreadArrays(panelContent.getElementsByTagName("calcite-checkbox"))[0];
                     sliders = __spreadArrays(panelContent.getElementsByTagName("calcite-slider"));
-                    sliders[0].value = bloomDefault.strength.toString();
-                    sliders[1].value = bloomDefault.radius.toString();
-                    sliders[2].value = bloomDefault.threshold.toString();
+                    var bloomStrengthSlider = sliders[0];
+                    var bloomRadiusSlider = sliders[1];
+                    var bloomThresholdSlider = sliders[2];
+                    var spanElements = __spreadArrays(panelContent.getElementsByTagName("span"));
+                    var effectiveStrengthSpan_1 = spanElements[0];
+                    var effectiveRadiusSpan_1 = spanElements[1];
+                    var effectiveThresholdSpan_1 = spanElements[2];
+                    bloomStrengthSlider.value = bloomDefault.strength.toString();
+                    bloomRadiusSlider.value = bloomDefault.radius.toString();
+                    bloomThresholdSlider.value = bloomDefault.threshold.toString();
                     sliders.forEach(function (control) {
                         control.addEventListener("calciteSliderChange", function () {
                             var scale = scaleCheckbox_1.checked ? view.scale : null;
@@ -94,20 +101,67 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                     scaleCheckbox_1.addEventListener("calciteCheckboxChange", function () {
                         var scale = scaleCheckbox_1.checked ? view.scale : null;
                         updateBloomEffect({ scale: scale, layer: layer });
+                        if (!scale) {
+                            effectiveStrengthSpan_1.innerText = "";
+                            effectiveRadiusSpan_1.innerText = "";
+                            effectiveThresholdSpan_1.innerText = "";
+                        }
                     });
+                    // don't watch scale if scale checkbox isn't enabled
+                    if (!scaleCheckbox_1.checked) {
+                        return;
+                    }
                     scaleWatcher = view.watch("scale", function (viewScale) {
                         console.log("scale", view.scale);
-                        console.log("effects", layer.effect);
-                        if (viewScale > effects[2].scale) {
+                        var layerEffect = layer.effect;
+                        if (viewScale > layerEffect[2].scale) {
+                            var effects_1 = parser_1.parse(layerEffect[2].value).effects;
+                            var effect = effects_1[0];
+                            effectiveRadiusSpan_1.innerText = "(" + effect.radius.toFixed(1).toString() + ")";
+                            effectiveStrengthSpan_1.innerText = "(" + effect.strength.toFixed(1).toString() + ")";
+                            effectiveThresholdSpan_1.innerText = "(" + effect.threshold.toFixed(1).toString() + ")";
                             return;
                         }
-                        if (viewScale > effects[1].scale) {
-                            var referenceScale = effects[1].scale;
-                            viewScale;
+                        if (viewScale < layerEffect[0].scale) {
+                            var effects_2 = parser_1.parse(layerEffect[0].value).effects;
+                            var effect = effects_2[0];
+                            effectiveRadiusSpan_1.innerText = "(" + effect.radius.toFixed(1).toString() + ")";
+                            effectiveStrengthSpan_1.innerText = "(" + effect.strength.toFixed(1).toString() + ")";
+                            effectiveThresholdSpan_1.innerText = "(" + effect.threshold.toFixed(1).toString() + ")";
+                            return;
                         }
-                        if (viewScale > effects[0].scale) {
+                        if (viewScale > layerEffect[1].scale) {
+                            var minScale = layerEffect[1].scale;
+                            var maxScale = layerEffect[2].scale;
+                            var factor = (viewScale - minScale) / (maxScale - minScale);
+                            var minEffect = parser_1.parse(layerEffect[1].value).effects[0];
+                            var maxEffect = parser_1.parse(layerEffect[2].value).effects[0];
+                            var minRadius = minEffect.radius;
+                            var maxRadius = maxEffect.radius;
+                            var minStrength = minEffect.strength;
+                            var maxStrength = maxEffect.strength;
+                            var minThreshold = minEffect.threshold;
+                            var maxThreshold = maxEffect.threshold;
+                            effectiveRadiusSpan_1.innerText = "(" + (minRadius + ((maxRadius - minRadius) * factor)).toFixed(1).toString() + ")";
+                            effectiveStrengthSpan_1.innerText = "(" + (minStrength + ((maxStrength - minStrength) * factor)).toFixed(1).toString() + ")";
+                            effectiveThresholdSpan_1.innerText = "(" + (minThreshold + ((maxThreshold - minThreshold) * factor)).toFixed(1).toString() + ")";
+                            return;
                         }
-                        if (viewScale < effects[0].scale) {
+                        if (viewScale > layerEffect[0].scale) {
+                            var minScale = layerEffect[0].scale;
+                            var maxScale = layerEffect[1].scale;
+                            var factor = (viewScale - minScale) / (maxScale - minScale);
+                            var minEffect = parser_1.parse(layerEffect[0].value).effects[0];
+                            var maxEffect = parser_1.parse(layerEffect[1].value).effects[0];
+                            var minRadius = minEffect.radius;
+                            var maxRadius = maxEffect.radius;
+                            var minStrength = minEffect.strength;
+                            var maxStrength = maxEffect.strength;
+                            var minThreshold = minEffect.threshold;
+                            var maxThreshold = maxEffect.threshold;
+                            effectiveRadiusSpan_1.innerText = "(" + (minRadius + ((maxRadius - minRadius) * factor)).toFixed(1).toString() + ")";
+                            effectiveStrengthSpan_1.innerText = "(" + (minStrength + ((maxStrength - minStrength) * factor)).toFixed(1).toString() + ")";
+                            effectiveThresholdSpan_1.innerText = "(" + (minThreshold + ((maxThreshold - minThreshold) * factor)).toFixed(1).toString() + ")";
                             return;
                         }
                     });
@@ -124,6 +178,10 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                     sliders[0].value = dropShadowDefault.offsetX.toString();
                     sliders[1].value = dropShadowDefault.offsetY.toString();
                     sliders[2].value = dropShadowDefault.blurRadius.toString();
+                    var spanElements = __spreadArrays(panelContent.getElementsByTagName("span"));
+                    var effectiveXoffsetSpan_1 = spanElements[0];
+                    var effectiveYoffsetSpan_1 = spanElements[1];
+                    var effectiveBlurradiusSpan_1 = spanElements[2];
                     sliders.forEach(function (control) {
                         control.addEventListener("calciteSliderChange", function () {
                             var scale = scaleCheckbox_2.checked ? view.scale : null;
@@ -133,6 +191,69 @@ define(["require", "exports", "esri/WebMap", "esri/views/MapView", "esri/widgets
                     scaleCheckbox_2.addEventListener("calciteCheckboxChange", function () {
                         var scale = scaleCheckbox_2.checked ? view.scale : null;
                         updateDropshadowEffect({ scale: scale, layer: layer });
+                        if (!scale) {
+                            effectiveXoffsetSpan_1.innerText = "";
+                            effectiveYoffsetSpan_1.innerText = "";
+                            effectiveBlurradiusSpan_1.innerText = "";
+                        }
+                    });
+                    // don't watch scale if scale checkbox isn't enabled
+                    if (!scaleCheckbox_2.checked) {
+                        return;
+                    }
+                    scaleWatcher = view.watch("scale", function (viewScale) {
+                        console.log("scale", view.scale);
+                        var layerEffect = layer.effect;
+                        if (viewScale > layerEffect[2].scale) {
+                            var effects_3 = parser_1.parse(layerEffect[2].value).effects;
+                            var effect = effects_3[0];
+                            effectiveXoffsetSpan_1.innerText = "(" + effect.offsetX.toFixed(1).toString() + ")";
+                            effectiveYoffsetSpan_1.innerText = "(" + effect.offsetY.toFixed(1).toString() + ")";
+                            effectiveBlurradiusSpan_1.innerText = "(" + effect.blurRadius.toFixed(1).toString() + ")";
+                            return;
+                        }
+                        if (viewScale < layerEffect[0].scale) {
+                            var effects_4 = parser_1.parse(layerEffect[0].value).effects;
+                            var effect = effects_4[0];
+                            effectiveXoffsetSpan_1.innerText = "(" + effect.offsetX.toFixed(1).toString() + ")";
+                            effectiveYoffsetSpan_1.innerText = "(" + effect.offsetY.toFixed(1).toString() + ")";
+                            effectiveBlurradiusSpan_1.innerText = "(" + effect.blurRadius.toFixed(1).toString() + ")";
+                            return;
+                        }
+                        if (viewScale > layerEffect[1].scale) {
+                            var minScale = layerEffect[1].scale;
+                            var maxScale = layerEffect[2].scale;
+                            var factor = (viewScale - minScale) / (maxScale - minScale);
+                            var minEffect = parser_1.parse(layerEffect[1].value).effects[0];
+                            var maxEffect = parser_1.parse(layerEffect[2].value).effects[0];
+                            var minOffsetX = minEffect.offsetX;
+                            var maxOffsetX = maxEffect.offsetX;
+                            var minOffsetY = minEffect.offsetY;
+                            var maxOffsetY = maxEffect.offsetY;
+                            var minBlurRadius = minEffect.blurRadius;
+                            var maxBlurRadius = maxEffect.blurRadius;
+                            effectiveXoffsetSpan_1.innerText = "(" + (minOffsetX + ((maxOffsetX - minOffsetX) * factor)).toFixed(1).toString() + ")";
+                            effectiveYoffsetSpan_1.innerText = "(" + (minOffsetY + ((maxOffsetY - minOffsetY) * factor)).toFixed(1).toString() + ")";
+                            effectiveBlurradiusSpan_1.innerText = "(" + (minBlurRadius + ((maxBlurRadius - minBlurRadius) * factor)).toFixed(1).toString() + ")";
+                            return;
+                        }
+                        if (viewScale > layerEffect[0].scale) {
+                            var minScale = layerEffect[0].scale;
+                            var maxScale = layerEffect[1].scale;
+                            var factor = (viewScale - minScale) / (maxScale - minScale);
+                            var minEffect = parser_1.parse(layerEffect[0].value).effects[0];
+                            var maxEffect = parser_1.parse(layerEffect[1].value).effects[0];
+                            var minOffsetX = minEffect.offsetX;
+                            var maxOffsetX = maxEffect.offsetX;
+                            var minOffsetY = minEffect.offsetY;
+                            var maxOffsetY = maxEffect.offsetY;
+                            var minBlurRadius = minEffect.blurRadius;
+                            var maxBlurRadius = maxEffect.blurRadius;
+                            effectiveXoffsetSpan_1.innerText = "(" + (minOffsetX + ((maxOffsetX - minOffsetX) * factor)).toFixed(1).toString() + ")";
+                            effectiveYoffsetSpan_1.innerText = "(" + (minOffsetY + ((maxOffsetY - minOffsetY) * factor)).toFixed(1).toString() + ")";
+                            effectiveBlurradiusSpan_1.innerText = "(" + (minBlurRadius + ((maxBlurRadius - minBlurRadius) * factor)).toFixed(1).toString() + ")";
+                            return;
+                        }
                     });
                 }
             }
