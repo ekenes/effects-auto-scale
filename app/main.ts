@@ -12,7 +12,7 @@ import Color = require("esri/Color");
 
 import { getUrlParams } from "./urlParams";
 import FeatureLayer = require("esri/layers/FeatureLayer");
-import { parse } from "esri/views/layers/effects/parser";
+import { parse } from "esri/layers/effects/parser";
 
 ( async () => {
 
